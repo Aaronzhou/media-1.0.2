@@ -258,6 +258,12 @@ public final class MainActivity extends Activity {
     MediaSource mediaSource = new ProgressiveMediaSource.Factory(dataSourceFactory)
         .createMediaSource(MediaItem.fromUri(uri));
 
+    // 每次播放前都释放旧播放器
+    if (player != null) {
+      player.release();
+      player = null;
+    }
+
     ExoPlayer player = new ExoPlayer.Builder(getApplicationContext()).build();
     player.setMediaSource(mediaSource);
     player.prepare();
@@ -271,6 +277,7 @@ public final class MainActivity extends Activity {
         if (playbackState == Player.STATE_ENDED) {
           Log.d("PlayerListener", "播放结束");
           // 这里处理播放完成逻辑
+          initializePlayer(); // 递归调用重新初始化播放器
         }
       }
     });
