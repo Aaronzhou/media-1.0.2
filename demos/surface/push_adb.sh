@@ -24,7 +24,12 @@ adb remount
 #adb pull /storage/emulated/0/Android/data/com.sobrr.camo/cache ./aLog80-4/
 
 #个人开发板1号
-adb push /Users/aaronzfy/do-video/has-question/origin-videos/720p/92647-720p.mp4 /storage/emulated/0/Download
+#adb push /Users/aaronzfy/do-video/has-question/origin-videos/720p/92647-720p.mp4 /storage/emulated/0/Download
+#铁盒
+#adb push /Users/aaronzfy/do-video/has-question/origin-videos/720p/92647-720p.mp4 /storage/emulated/legacy/Download
+adb push /Users/aaronzfy/do-video/has-question/origin-videos/720p/92647-720p.mp4 /storage/emulated/legacy
+
+
 
 
 

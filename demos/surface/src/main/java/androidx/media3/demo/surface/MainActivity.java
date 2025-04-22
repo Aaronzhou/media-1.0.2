@@ -15,11 +15,15 @@
  */
 package androidx.media3.demo.surface;
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
+import android.provider.MediaStore;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.Surface;
@@ -38,6 +42,7 @@ import androidx.media3.common.util.Util;
 import androidx.media3.datasource.DataSource;
 import androidx.media3.datasource.DefaultDataSource;
 import androidx.media3.datasource.DefaultHttpDataSource;
+import androidx.media3.datasource.FileDataSource;
 import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.exoplayer.dash.DashMediaSource;
 import androidx.media3.exoplayer.drm.DefaultDrmSessionManager;
@@ -47,16 +52,24 @@ import androidx.media3.exoplayer.drm.HttpMediaDrmCallback;
 import androidx.media3.exoplayer.source.MediaSource;
 import androidx.media3.exoplayer.source.ProgressiveMediaSource;
 import androidx.media3.ui.LegacyPlayerControlView;
+import java.io.File;
 import java.util.UUID;
 
-/** Activity that demonstrates use of {@link SurfaceControl} with ExoPlayer. */
+/**
+ * Activity that demonstrates use of {@link SurfaceControl} with ExoPlayer.
+ */
 public final class MainActivity extends Activity {
 
 //  private static final String DEFAULT_MEDIA_URI =
 //      "https://storage.googleapis.com/exoplayer-test-media-1/mkv/android-screens-lavf-56.36.100-aac-avc-main-1280x720.mkv";
 
 
-  private static final String DEFAULT_MEDIA_URI="file:///storage/emulated/0/Download/92647-720p.mp4";
+  //个人开发板1
+//  private static final String DEFAULT_MEDIA_URI="file:///storage/emulated/0/Download/92647-720p.mp4";
+  //铁盒
+  private static final String DEFAULT_MEDIA_URI = "/storage/emulated/legacy/Download/92647-720p.mp4";
+
+
   private static final String SURFACE_CONTROL_NAME = "surfacedemo";
 
   private static final String ACTION_VIEW = "androidx.media3.demo.surface.action.VIEW";
@@ -66,12 +79,17 @@ public final class MainActivity extends Activity {
   private static final String OWNER_EXTRA = "owner";
 
   private boolean isOwner;
-  @Nullable private LegacyPlayerControlView playerControlView;
-  @Nullable private SurfaceView fullScreenView;
-  @Nullable private SurfaceView nonFullScreenView;
-  @Nullable private SurfaceView currentOutputView;
+  @Nullable
+  private LegacyPlayerControlView playerControlView;
+  @Nullable
+  private SurfaceView fullScreenView;
+  @Nullable
+  private SurfaceView nonFullScreenView;
+  @Nullable
+  private SurfaceView currentOutputView;
 
-  @Nullable private static ExoPlayer player;
+  @Nullable
+  private static ExoPlayer player;
 
   @Override
   protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -129,8 +147,15 @@ public final class MainActivity extends Activity {
       GridLayout.LayoutParams layoutParams = new GridLayout.LayoutParams();
       layoutParams.width = 0;
       layoutParams.height = 0;
-      layoutParams.columnSpec = GridLayout.spec(i % 3, 1f);
-      layoutParams.rowSpec = GridLayout.spec(i / 3, 1f);
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+        layoutParams.columnSpec = GridLayout.spec(i % 3, 1f);
+        layoutParams.rowSpec = GridLayout.spec(i / 3, 1f);
+
+      }else {
+        // 兼容低版本处理，例如直接使用整数值
+        layoutParams.columnSpec = GridLayout.spec(i % 3);
+        layoutParams.rowSpec = GridLayout.spec(i / 3);
+      }
       layoutParams.bottomMargin = 10;
       layoutParams.leftMargin = 10;
       layoutParams.topMargin = 10;
@@ -142,10 +167,10 @@ public final class MainActivity extends Activity {
   @Override
   public void onResume() {
     super.onResume();
-    Log.i("--=","Build.VERSION.SDK_INT="+Build.VERSION.SDK_INT);
+    Log.i("--=", "Build.VERSION.SDK_INT=" + Build.VERSION.SDK_INT);
 
     if (isOwner && player == null) {
-      Log.i("--=","Build.VERSION.SDK_INT="+Build.VERSION.SDK_INT+";isOwner="+isOwner);
+      Log.i("--=", "Build.VERSION.SDK_INT=" + Build.VERSION.SDK_INT + ";isOwner=" + isOwner);
 
       initializePlayer();
     }
@@ -175,60 +200,89 @@ public final class MainActivity extends Activity {
     }
   }
 
+//  private void initializePlayer() {
+//    Intent intent = getIntent();
+//    String action = intent.getAction();
+//    Uri uri =
+//        ACTION_VIEW.equals(action)
+//            ? Assertions.checkNotNull(intent.getData())
+//            : Uri.parse(DEFAULT_MEDIA_URI);
+//    DrmSessionManager drmSessionManager;
+//    if (intent.hasExtra(DRM_SCHEME_EXTRA)) {
+//      String drmScheme = Assertions.checkNotNull(intent.getStringExtra(DRM_SCHEME_EXTRA));
+//      String drmLicenseUrl = Assertions.checkNotNull(intent.getStringExtra(DRM_LICENSE_URL_EXTRA));
+//      UUID drmSchemeUuid = Assertions.checkNotNull(Util.getDrmUuid(drmScheme));
+//      DataSource.Factory licenseDataSourceFactory = new DefaultHttpDataSource.Factory();
+//      HttpMediaDrmCallback drmCallback =
+//          new HttpMediaDrmCallback(drmLicenseUrl, licenseDataSourceFactory);
+//      drmSessionManager =
+//          new DefaultDrmSessionManager.Builder()
+//              .setUuidAndExoMediaDrmProvider(drmSchemeUuid, FrameworkMediaDrm.DEFAULT_PROVIDER)
+//              .build(drmCallback);
+//    } else {
+//      drmSessionManager = DrmSessionManager.DRM_UNSUPPORTED;
+//    }
+//
+//    DataSource.Factory dataSourceFactory = new DefaultDataSource.Factory(this);
+//    MediaSource mediaSource;
+//    @Nullable String fileExtension = intent.getStringExtra(EXTENSION_EXTRA);
+//    @C.ContentType
+//    int type =
+//        TextUtils.isEmpty(fileExtension)
+//            ? Util.inferContentType(uri)
+//            : Util.inferContentTypeForExtension(fileExtension);
+//    if (type == C.CONTENT_TYPE_DASH) {
+//      mediaSource =
+//          new DashMediaSource.Factory(dataSourceFactory)
+//              .setDrmSessionManagerProvider(unusedMediaItem -> drmSessionManager)
+//              .createMediaSource(MediaItem.fromUri(uri));
+//    } else if (type == C.CONTENT_TYPE_OTHER) {
+//      mediaSource =
+//          new ProgressiveMediaSource.Factory(dataSourceFactory)
+//              .setDrmSessionManagerProvider(unusedMediaItem -> drmSessionManager)
+//              .createMediaSource(MediaItem.fromUri(uri));
+//    } else {
+//      IllegalStateException illegalStateException=new IllegalStateException();
+//      Log.i("--=","Build.VERSION.SDK_INT="+Build.VERSION.SDK_INT+";异常="+Log.getStackTraceString(illegalStateException));
+//
+//      throw illegalStateException;
+//    }
+//    Log.i("--=","Build.VERSION.SDK_INT="+Build.VERSION.SDK_INT+";1");
+//
+//    ExoPlayer player = new ExoPlayer.Builder(getApplicationContext()).build();
+//    player.setMediaSource(mediaSource);
+//    player.prepare();
+//    player.play();
+//    player.setRepeatMode(Player.REPEAT_MODE_OFF);//Player.REPEAT_MODE_ALL循环播放,Player.REPEAT_MODE_OFF不循环播放
+//    // 添加播放状态监听
+//    player.addListener(new Player.Listener() {
+//      @Override
+//      public void onPlaybackStateChanged(@Player.State int playbackState) {
+//        if (playbackState == Player.STATE_ENDED) {
+//          Log.d("PlayerListener", "播放结束");
+//          // 这里处理播放完成逻辑
+//        }
+//      }
+//    });
+//
+//    Surface surface = nonFullScreenView.getHolder().getSurface();
+//    player.setVideoSurface(surface);
+//
+//    MainActivity.player = player;
+//  }
+
   private void initializePlayer() {
-    Intent intent = getIntent();
-    String action = intent.getAction();
-    Uri uri =
-        ACTION_VIEW.equals(action)
-            ? Assertions.checkNotNull(intent.getData())
-            : Uri.parse(DEFAULT_MEDIA_URI);
-    DrmSessionManager drmSessionManager;
-    if (intent.hasExtra(DRM_SCHEME_EXTRA)) {
-      String drmScheme = Assertions.checkNotNull(intent.getStringExtra(DRM_SCHEME_EXTRA));
-      String drmLicenseUrl = Assertions.checkNotNull(intent.getStringExtra(DRM_LICENSE_URL_EXTRA));
-      UUID drmSchemeUuid = Assertions.checkNotNull(Util.getDrmUuid(drmScheme));
-      DataSource.Factory licenseDataSourceFactory = new DefaultHttpDataSource.Factory();
-      HttpMediaDrmCallback drmCallback =
-          new HttpMediaDrmCallback(drmLicenseUrl, licenseDataSourceFactory);
-      drmSessionManager =
-          new DefaultDrmSessionManager.Builder()
-              .setUuidAndExoMediaDrmProvider(drmSchemeUuid, FrameworkMediaDrm.DEFAULT_PROVIDER)
-              .build(drmCallback);
-    } else {
-      drmSessionManager = DrmSessionManager.DRM_UNSUPPORTED;
-    }
 
-    DataSource.Factory dataSourceFactory = new DefaultDataSource.Factory(this);
-    MediaSource mediaSource;
-    @Nullable String fileExtension = intent.getStringExtra(EXTENSION_EXTRA);
-    @C.ContentType
-    int type =
-        TextUtils.isEmpty(fileExtension)
-            ? Util.inferContentType(uri)
-            : Util.inferContentTypeForExtension(fileExtension);
-    if (type == C.CONTENT_TYPE_DASH) {
-      mediaSource =
-          new DashMediaSource.Factory(dataSourceFactory)
-              .setDrmSessionManagerProvider(unusedMediaItem -> drmSessionManager)
-              .createMediaSource(MediaItem.fromUri(uri));
-    } else if (type == C.CONTENT_TYPE_OTHER) {
-      mediaSource =
-          new ProgressiveMediaSource.Factory(dataSourceFactory)
-              .setDrmSessionManagerProvider(unusedMediaItem -> drmSessionManager)
-              .createMediaSource(MediaItem.fromUri(uri));
-    } else {
-      IllegalStateException illegalStateException=new IllegalStateException();
-      Log.i("--=","Build.VERSION.SDK_INT="+Build.VERSION.SDK_INT+";异常="+Log.getStackTraceString(illegalStateException));
-
-      throw illegalStateException;
-    }
-    Log.i("--=","Build.VERSION.SDK_INT="+Build.VERSION.SDK_INT+";1");
-
+    File file = new File(Environment.getExternalStorageDirectory(), "Download/92647-720p.mp4");
+    Uri uri = Uri.fromFile(file); // 注意：Android 7.0+ 需要使用 FileProvider，这里我们在 Android 5.1 不用
+    Log.i("--=", "Build.VERSION.SDK_INT=" + Build.VERSION.SDK_INT + ";1,path=" + file.getAbsolutePath());
+    MediaItem mediaItem = MediaItem.fromUri(uri);
     ExoPlayer player = new ExoPlayer.Builder(getApplicationContext()).build();
-    player.setMediaSource(mediaSource);
+    player.setMediaItem(mediaItem);
     player.prepare();
     player.play();
-    player.setRepeatMode(Player.REPEAT_MODE_OFF);//Player.REPEAT_MODE_ALL循环播放,Player.REPEAT_MODE_OFF不循环播放
+    player.setRepeatMode(
+        Player.REPEAT_MODE_OFF);//Player.REPEAT_MODE_ALL循环播放,Player.REPEAT_MODE_OFF不循环播放
     // 添加播放状态监听
     player.addListener(new Player.Listener() {
       @Override
@@ -245,28 +299,6 @@ public final class MainActivity extends Activity {
 
     MainActivity.player = player;
   }
-
-
-//  private void attachSurfaceListener(SurfaceView surfaceView) {
-//    surfaceView.getHolder().addCallback(new SurfaceHolder.Callback() {
-//      @Override
-//      public void surfaceCreated(SurfaceHolder holder) {
-//        if (surfaceView == currentOutputView && player != null) {
-//          player.setVideoSurface(holder.getSurface()); // ✅ 安全设置
-//        }
-//      }
-//
-//      @Override
-//      public void surfaceDestroyed(SurfaceHolder holder) {
-//        if (player != null) {
-//          player.clearVideoSurface(); // 释放旧的 surface
-//        }
-//      }
-//
-//      @Override
-//      public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {}
-//    });
-//  }
 
 
   private void setCurrentOutputView(@Nullable SurfaceView surfaceView) {
@@ -291,10 +323,12 @@ public final class MainActivity extends Activity {
 
               @Override
               public void surfaceChanged(
-                  SurfaceHolder surfaceHolder, int format, int width, int height) {}
+                  SurfaceHolder surfaceHolder, int format, int width, int height) {
+              }
 
               @Override
-              public void surfaceDestroyed(SurfaceHolder surfaceHolder) {}
+              public void surfaceDestroyed(SurfaceHolder surfaceHolder) {
+              }
             });
   }
 
