@@ -41,7 +41,7 @@ android {
     defaultConfig {
         versionCode 3
         versionName "1.1.0"
-        minSdkVersion 27
+        minSdkVersion project.ext.minSdkVersion
         targetSdkVersion project.ext.appTargetSdkVersion
     }
 

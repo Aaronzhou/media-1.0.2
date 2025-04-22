@@ -52,8 +52,11 @@ import java.util.UUID;
 /** Activity that demonstrates use of {@link SurfaceControl} with ExoPlayer. */
 public final class MainActivity extends Activity {
 
-  private static final String DEFAULT_MEDIA_URI =
-      "https://storage.googleapis.com/exoplayer-test-media-1/mkv/android-screens-lavf-56.36.100-aac-avc-main-1280x720.mkv";
+//  private static final String DEFAULT_MEDIA_URI =
+//      "https://storage.googleapis.com/exoplayer-test-media-1/mkv/android-screens-lavf-56.36.100-aac-avc-main-1280x720.mkv";
+
+
+  private static final String DEFAULT_MEDIA_URI="file:///storage/emulated/0/Download/92647-720p.mp4";
   private static final String SURFACE_CONTROL_NAME = "surfacedemo";
 
   private static final String ACTION_VIEW = "androidx.media3.demo.surface.action.VIEW";
@@ -142,6 +145,8 @@ public final class MainActivity extends Activity {
     Log.i("--=","Build.VERSION.SDK_INT="+Build.VERSION.SDK_INT);
 
     if (isOwner && player == null) {
+      Log.i("--=","Build.VERSION.SDK_INT="+Build.VERSION.SDK_INT+";isOwner="+isOwner);
+
       initializePlayer();
     }
 
@@ -212,19 +217,57 @@ public final class MainActivity extends Activity {
               .setDrmSessionManagerProvider(unusedMediaItem -> drmSessionManager)
               .createMediaSource(MediaItem.fromUri(uri));
     } else {
-      throw new IllegalStateException();
+      IllegalStateException illegalStateException=new IllegalStateException();
+      Log.i("--=","Build.VERSION.SDK_INT="+Build.VERSION.SDK_INT+";异常="+Log.getStackTraceString(illegalStateException));
+
+      throw illegalStateException;
     }
+    Log.i("--=","Build.VERSION.SDK_INT="+Build.VERSION.SDK_INT+";1");
+
     ExoPlayer player = new ExoPlayer.Builder(getApplicationContext()).build();
     player.setMediaSource(mediaSource);
     player.prepare();
     player.play();
-    player.setRepeatMode(Player.REPEAT_MODE_ALL);
+    player.setRepeatMode(Player.REPEAT_MODE_OFF);//Player.REPEAT_MODE_ALL循环播放,Player.REPEAT_MODE_OFF不循环播放
+    // 添加播放状态监听
+    player.addListener(new Player.Listener() {
+      @Override
+      public void onPlaybackStateChanged(@Player.State int playbackState) {
+        if (playbackState == Player.STATE_ENDED) {
+          Log.d("PlayerListener", "播放结束");
+          // 这里处理播放完成逻辑
+        }
+      }
+    });
 
     Surface surface = nonFullScreenView.getHolder().getSurface();
     player.setVideoSurface(surface);
 
     MainActivity.player = player;
   }
+
+
+//  private void attachSurfaceListener(SurfaceView surfaceView) {
+//    surfaceView.getHolder().addCallback(new SurfaceHolder.Callback() {
+//      @Override
+//      public void surfaceCreated(SurfaceHolder holder) {
+//        if (surfaceView == currentOutputView && player != null) {
+//          player.setVideoSurface(holder.getSurface()); // ✅ 安全设置
+//        }
+//      }
+//
+//      @Override
+//      public void surfaceDestroyed(SurfaceHolder holder) {
+//        if (player != null) {
+//          player.clearVideoSurface(); // 释放旧的 surface
+//        }
+//      }
+//
+//      @Override
+//      public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {}
+//    });
+//  }
+
 
   private void setCurrentOutputView(@Nullable SurfaceView surfaceView) {
     currentOutputView = surfaceView;
