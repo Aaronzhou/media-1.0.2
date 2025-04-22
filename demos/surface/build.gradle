@@ -16,6 +16,22 @@ apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion project.ext.compileSdkVersion
+    signingConfigs {
+        debug {
+//            storeFile file('D:\\A\\kiwi_store')
+            storeFile file('../media.keystore')
+            keyAlias 'kiwi'
+            storePassword 'android'
+            keyPassword 'android'
+        }
+        release {
+//            storeFile file('D:\\A\\kiwi_store')
+            storeFile file('../media.keystore')
+            storePassword 'android'
+            keyPassword 'android'
+            keyAlias 'kiwi'
+        }
+    }
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
@@ -23,20 +39,50 @@ android {
     }
 
     defaultConfig {
-        versionName project.ext.releaseVersion
-        versionCode project.ext.releaseVersionCode
-        minSdkVersion 29
+        versionCode 3
+        versionName "1.1.0"
+        minSdkVersion 27
         targetSdkVersion project.ext.appTargetSdkVersion
     }
 
+//    buildTypes {
+//        release {
+//            shrinkResources true
+//            minifyEnabled true
+//            proguardFiles getDefaultProguardFile('proguard-android.txt')
+//            signingConfig signingConfigs.debug
+//        }
+//    }
     buildTypes {
+        debug {
+            minifyEnabled false
+            debuggable true
+//            zipAlignEnabled true
+//            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+
+        }
+
         release {
-            shrinkResources true
-            minifyEnabled true
-            proguardFiles getDefaultProguardFile('proguard-android.txt')
-            signingConfig signingConfigs.debug
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+    applicationVariants.all {
+        variant ->
+            variant.outputs.all {
+                def createTime = new Date().format("yyyy-MM-dd-HHmmss")
+                //我此处的命名规则是：渠道名_项目名_版本名_创建时间_构建类型.apk
+                def fileName = "media_v${defaultConfig.versionName}_${createTime}_release.apk"
+                //将名字打印出来，以便及时查看是否满意。
+                println "buildTypes---文件名:release-----------------${fileName}"
+                outputFileName = fileName
+            }
+    }
+
+
+
+
 
     lintOptions {
         // This demo app does not have translations.

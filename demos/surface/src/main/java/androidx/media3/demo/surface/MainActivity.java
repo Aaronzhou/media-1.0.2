@@ -18,8 +18,10 @@ package androidx.media3.demo.surface;
 import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.Surface;
 import android.view.SurfaceControl;
 import android.view.SurfaceHolder;
@@ -67,8 +69,6 @@ public final class MainActivity extends Activity {
   @Nullable private SurfaceView currentOutputView;
 
   @Nullable private static ExoPlayer player;
-  @Nullable private static SurfaceControl surfaceControl;
-  @Nullable private static Surface videoSurface;
 
   @Override
   protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -139,6 +139,7 @@ public final class MainActivity extends Activity {
   @Override
   public void onResume() {
     super.onResume();
+    Log.i("--=","Build.VERSION.SDK_INT="+Build.VERSION.SDK_INT);
 
     if (isOwner && player == null) {
       initializePlayer();
@@ -162,14 +163,6 @@ public final class MainActivity extends Activity {
   public void onDestroy() {
     super.onDestroy();
     if (isOwner && isFinishing()) {
-      if (surfaceControl != null) {
-        surfaceControl.release();
-        surfaceControl = null;
-      }
-      if (videoSurface != null) {
-        videoSurface.release();
-        videoSurface = null;
-      }
       if (player != null) {
         player.release();
         player = null;
@@ -227,20 +220,17 @@ public final class MainActivity extends Activity {
     player.play();
     player.setRepeatMode(Player.REPEAT_MODE_ALL);
 
-    surfaceControl =
-        new SurfaceControl.Builder()
-            .setName(SURFACE_CONTROL_NAME)
-            .setBufferSize(/* width= */ 0, /* height= */ 0)
-            .build();
-    videoSurface = new Surface(surfaceControl);
-    player.setVideoSurface(videoSurface);
+    Surface surface = nonFullScreenView.getHolder().getSurface();
+    player.setVideoSurface(surface);
+
     MainActivity.player = player;
   }
 
   private void setCurrentOutputView(@Nullable SurfaceView surfaceView) {
     currentOutputView = surfaceView;
-    if (surfaceView != null && surfaceView.getHolder().getSurface() != null) {
-      reparent(surfaceView);
+    if (player != null && surfaceView != null) {
+      Surface surface = surfaceView.getHolder().getSurface();
+      player.setVideoSurface(surface);
     }
   }
 
@@ -266,20 +256,5 @@ public final class MainActivity extends Activity {
   }
 
   private static void reparent(@Nullable SurfaceView surfaceView) {
-    SurfaceControl surfaceControl = Assertions.checkNotNull(MainActivity.surfaceControl);
-    if (surfaceView == null) {
-      new SurfaceControl.Transaction()
-          .reparent(surfaceControl, /* newParent= */ null)
-          .setBufferSize(surfaceControl, /* w= */ 0, /* h= */ 0)
-          .setVisibility(surfaceControl, /* visible= */ false)
-          .apply();
-    } else {
-      SurfaceControl newParentSurfaceControl = surfaceView.getSurfaceControl();
-      new SurfaceControl.Transaction()
-          .reparent(surfaceControl, newParentSurfaceControl)
-          .setBufferSize(surfaceControl, surfaceView.getWidth(), surfaceView.getHeight())
-          .setVisibility(surfaceControl, /* visible= */ true)
-          .apply();
-    }
   }
 }

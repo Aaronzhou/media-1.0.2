@@ -1,0 +1,20 @@
+{
+  "version": 3,
+  "artifactType": {
+    "type": "APK",
+    "kind": "Directory"
+  },
+  "applicationId": "androidx.media3.demo.surface",
+  "variantName": "release",
+  "elements": [
+    {
+      "type": "SINGLE",
+      "filters": [],
+      "attributes": [],
+      "versionCode": 3,
+      "versionName": "1.1.0",
+      "outputFile": "media_v1.1.0_2025-04-22-120646_release.apk"
+    }
+  ],
+  "elementType": "File"
+}
