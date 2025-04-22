@@ -25,12 +25,12 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
-    <GridLayout
+    <SurfaceView
       android:id="@+id/grid_layout"
       android:layout_width="match_parent"
       android:layout_height="0dp"
       android:layout_weight="1"
-      android:columnCount="3"/>
+    />
 
     <androidx.media3.ui.LegacyPlayerControlView
       android:id="@+id/player_control_view"

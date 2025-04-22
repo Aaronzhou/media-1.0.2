@@ -104,63 +104,10 @@ public final class MainActivity extends Activity {
         });
     attachSurfaceListener(fullScreenView);
     isOwner = getIntent().getBooleanExtra(OWNER_EXTRA, /* defaultValue= */ true);
-    GridLayout gridLayout = findViewById(R.id.grid_layout);
-    for (int i = 0; i < 9; i++) {
-      View view;
-      if (i == 0) {
-        Button button = new Button(/* context= */ this);
-        view = button;
-        button.setText(getString(R.string.no_output_label));
-        button.setOnClickListener(v -> reparent(/* surfaceView= */ null));
-      } else if (i == 1) {
-        Button button = new Button(/* context= */ this);
-        view = button;
-        button.setText(getString(R.string.full_screen_label));
-        button.setOnClickListener(
-            v -> {
-              setCurrentOutputView(fullScreenView);
-              Assertions.checkNotNull(fullScreenView).setVisibility(View.VISIBLE);
-            });
-      } else if (i == 2) {
-        Button button = new Button(/* context= */ this);
-        view = button;
-        button.setText(getString(R.string.new_activity_label));
-        button.setOnClickListener(
-            v ->
-                startActivity(
-                    new Intent(MainActivity.this, MainActivity.class)
-                        .putExtra(OWNER_EXTRA, /* value= */ false)));
-      } else {
-        SurfaceView surfaceView = new SurfaceView(this);
-        view = surfaceView;
-        attachSurfaceListener(surfaceView);
-        surfaceView.setOnClickListener(
-            v -> {
-              setCurrentOutputView(surfaceView);
-              nonFullScreenView = surfaceView;
-            });
-        if (nonFullScreenView == null) {
-          nonFullScreenView = surfaceView;
-        }
-      }
-      gridLayout.addView(view);
-      GridLayout.LayoutParams layoutParams = new GridLayout.LayoutParams();
-      layoutParams.width = 0;
-      layoutParams.height = 0;
-      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-        layoutParams.columnSpec = GridLayout.spec(i % 3, 1f);
-        layoutParams.rowSpec = GridLayout.spec(i / 3, 1f);
-
-      }else {
-        // 兼容低版本处理，例如直接使用整数值
-        layoutParams.columnSpec = GridLayout.spec(i % 3);
-        layoutParams.rowSpec = GridLayout.spec(i / 3);
-      }
-      layoutParams.bottomMargin = 10;
-      layoutParams.leftMargin = 10;
-      layoutParams.topMargin = 10;
-      layoutParams.rightMargin = 10;
-      view.setLayoutParams(layoutParams);
+    SurfaceView surfaceView = findViewById(R.id.grid_layout);
+    attachSurfaceListener(surfaceView);
+    if (nonFullScreenView == null) {
+      nonFullScreenView = surfaceView;
     }
   }
 
@@ -177,16 +124,20 @@ public final class MainActivity extends Activity {
 
     setCurrentOutputView(nonFullScreenView);
 
-    LegacyPlayerControlView playerControlView = Assertions.checkNotNull(this.playerControlView);
-    playerControlView.setPlayer(player);
-    playerControlView.show();
+    if (playerControlView != null) {
+      playerControlView.setPlayer(player);
+      playerControlView.show();
+    }
+
   }
 
   @Override
   public void onPause() {
     super.onPause();
+    if (playerControlView != null) {
+      playerControlView.setPlayer(null);
+    }
 
-    Assertions.checkNotNull(playerControlView).setPlayer(null);
   }
 
   @Override
@@ -275,7 +226,8 @@ public final class MainActivity extends Activity {
 
     File file = new File(Environment.getExternalStorageDirectory(), "Download/92647-720p.mp4");
     Uri uri = Uri.fromFile(file); // 注意：Android 7.0+ 需要使用 FileProvider，这里我们在 Android 5.1 不用
-    Log.i("--=", "Build.VERSION.SDK_INT=" + Build.VERSION.SDK_INT + ";1,path=" + file.getAbsolutePath());
+    Log.i("--=",
+        "Build.VERSION.SDK_INT=" + Build.VERSION.SDK_INT + ";1,path=" + file.getAbsolutePath());
     MediaItem mediaItem = MediaItem.fromUri(uri);
     ExoPlayer player = new ExoPlayer.Builder(getApplicationContext()).build();
     player.setMediaItem(mediaItem);
