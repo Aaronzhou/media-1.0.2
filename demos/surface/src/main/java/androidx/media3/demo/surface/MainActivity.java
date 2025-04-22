@@ -17,6 +17,7 @@ package androidx.media3.demo.surface;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
@@ -63,11 +64,10 @@ public final class MainActivity extends Activity {
 //  private static final String DEFAULT_MEDIA_URI =
 //      "https://storage.googleapis.com/exoplayer-test-media-1/mkv/android-screens-lavf-56.36.100-aac-avc-main-1280x720.mkv";
 
-
   //个人开发板1
 //  private static final String DEFAULT_MEDIA_URI="file:///storage/emulated/0/Download/92647-720p.mp4";
   //铁盒
-  private static final String DEFAULT_MEDIA_URI = "/storage/emulated/legacy/Download/92647-720p.mp4";
+//  private static final String DEFAULT_MEDIA_URI = "/storage/emulated/legacy/Download/92647-720p.mp4";
 
 
   private static final String SURFACE_CONTROL_NAME = "surfacedemo";
@@ -77,6 +77,7 @@ public final class MainActivity extends Activity {
   private static final String DRM_SCHEME_EXTRA = "drm_scheme";
   private static final String DRM_LICENSE_URL_EXTRA = "drm_license_url";
   private static final String OWNER_EXTRA = "owner";
+  Uri uri = null;
 
   private boolean isOwner;
   @Nullable
@@ -224,13 +225,41 @@ public final class MainActivity extends Activity {
 
   private void initializePlayer() {
 
-    File file = new File(Environment.getExternalStorageDirectory(), "Download/92647-720p.mp4");
-    Uri uri = Uri.fromFile(file); // 注意：Android 7.0+ 需要使用 FileProvider，这里我们在 Android 5.1 不用
+//    File file = new File(Environment.getExternalStorageDirectory(), "Download/92647-720p.mp4");
+//    Uri uri = Uri.fromFile(file); // 注意：Android 7.0+ 需要使用 FileProvider，这里我们在 Android 5.1 不用
+
+//    String path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+//        .getAbsolutePath() + "/92647-720p.mp4";
+    String path = "/storage/sdcard0/Download/92647-720p.mp4";
+//    String path = "https://storage.googleapis.com/exoplayer-test-media-1/mkv/android-screens-lavf-56.36.100-aac-avc-main-1280x720.mkv";
+
+//    uri = Uri.fromFile(new File(path));
+
+    if (path.startsWith("http") || path.startsWith("https")) {
+      // 网络地址
+      uri = Uri.parse(path);
+    } else {
+      // 本地路径（可以是 /storage/emulated/0/xxx.mp4）
+      File file=new File(path);
+      Log.d("FileCheck", "exists=" + file.exists() + ", canRead=" + file.canRead());
+
+      uri = Uri.fromFile(file);
+    }
+
+    Context context = getApplicationContext();
     Log.i("--=",
-        "Build.VERSION.SDK_INT=" + Build.VERSION.SDK_INT + ";1,path=" + file.getAbsolutePath());
-    MediaItem mediaItem = MediaItem.fromUri(uri);
+        "Build.VERSION.SDK_INT=" + Build.VERSION.SDK_INT + ";1,path=" + uri.getPath());
+//    MediaItem mediaItem = MediaItem.fromUri(uri);
+
+    // 统一使用 DefaultDataSource.Factory（会自动判断是本地 or 网络）
+    DataSource.Factory dataSourceFactory = new DefaultDataSource.Factory(context);
+
+// 创建媒体源
+    MediaSource mediaSource = new ProgressiveMediaSource.Factory(dataSourceFactory)
+        .createMediaSource(MediaItem.fromUri(uri));
+
     ExoPlayer player = new ExoPlayer.Builder(getApplicationContext()).build();
-    player.setMediaItem(mediaItem);
+    player.setMediaSource(mediaSource);
     player.prepare();
     player.play();
     player.setRepeatMode(
