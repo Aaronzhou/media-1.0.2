@@ -1,0 +1,7 @@
+
+# Created by https://www.gitignore.io/api/android,androidstudio
+release/
+### Android ###
+# Built application files
+
+# End of https://www.gitignore.io/api/android,androidstudio

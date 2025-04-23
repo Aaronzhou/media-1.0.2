@@ -110,7 +110,9 @@ public final class MainActivity extends Activity {
 
     if (playerControlView != null) {
       playerControlView.setPlayer(player);
-      playerControlView.show();
+//      playerControlView.show();
+      //隐藏控制播放的控件
+      playerControlView.hide();
     }
 
   }
