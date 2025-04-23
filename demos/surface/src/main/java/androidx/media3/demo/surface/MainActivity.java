@@ -54,6 +54,8 @@ import androidx.media3.exoplayer.source.MediaSource;
 import androidx.media3.exoplayer.source.ProgressiveMediaSource;
 import androidx.media3.ui.LegacyPlayerControlView;
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -69,13 +71,7 @@ public final class MainActivity extends Activity {
   //铁盒
 //  private static final String DEFAULT_MEDIA_URI = "/storage/emulated/legacy/Download/92647-720p.mp4";
 
-
-  private static final String SURFACE_CONTROL_NAME = "surfacedemo";
-
-  private static final String ACTION_VIEW = "androidx.media3.demo.surface.action.VIEW";
-  private static final String EXTENSION_EXTRA = "extension";
-  private static final String DRM_SCHEME_EXTRA = "drm_scheme";
-  private static final String DRM_LICENSE_URL_EXTRA = "drm_license_url";
+  List<String> mp4Files = new ArrayList<>();
   private static final String OWNER_EXTRA = "owner";
   Uri uri = null;
 
@@ -110,7 +106,11 @@ public final class MainActivity extends Activity {
     if (nonFullScreenView == null) {
       nonFullScreenView = surfaceView;
     }
+    getAllMp4FilesInDownloads();
+
   }
+
+  int currPotion = 0;
 
   @Override
   public void onResume() {
@@ -152,76 +152,31 @@ public final class MainActivity extends Activity {
     }
   }
 
-//  private void initializePlayer() {
-//    Intent intent = getIntent();
-//    String action = intent.getAction();
-//    Uri uri =
-//        ACTION_VIEW.equals(action)
-//            ? Assertions.checkNotNull(intent.getData())
-//            : Uri.parse(DEFAULT_MEDIA_URI);
-//    DrmSessionManager drmSessionManager;
-//    if (intent.hasExtra(DRM_SCHEME_EXTRA)) {
-//      String drmScheme = Assertions.checkNotNull(intent.getStringExtra(DRM_SCHEME_EXTRA));
-//      String drmLicenseUrl = Assertions.checkNotNull(intent.getStringExtra(DRM_LICENSE_URL_EXTRA));
-//      UUID drmSchemeUuid = Assertions.checkNotNull(Util.getDrmUuid(drmScheme));
-//      DataSource.Factory licenseDataSourceFactory = new DefaultHttpDataSource.Factory();
-//      HttpMediaDrmCallback drmCallback =
-//          new HttpMediaDrmCallback(drmLicenseUrl, licenseDataSourceFactory);
-//      drmSessionManager =
-//          new DefaultDrmSessionManager.Builder()
-//              .setUuidAndExoMediaDrmProvider(drmSchemeUuid, FrameworkMediaDrm.DEFAULT_PROVIDER)
-//              .build(drmCallback);
-//    } else {
-//      drmSessionManager = DrmSessionManager.DRM_UNSUPPORTED;
-//    }
-//
-//    DataSource.Factory dataSourceFactory = new DefaultDataSource.Factory(this);
-//    MediaSource mediaSource;
-//    @Nullable String fileExtension = intent.getStringExtra(EXTENSION_EXTRA);
-//    @C.ContentType
-//    int type =
-//        TextUtils.isEmpty(fileExtension)
-//            ? Util.inferContentType(uri)
-//            : Util.inferContentTypeForExtension(fileExtension);
-//    if (type == C.CONTENT_TYPE_DASH) {
-//      mediaSource =
-//          new DashMediaSource.Factory(dataSourceFactory)
-//              .setDrmSessionManagerProvider(unusedMediaItem -> drmSessionManager)
-//              .createMediaSource(MediaItem.fromUri(uri));
-//    } else if (type == C.CONTENT_TYPE_OTHER) {
-//      mediaSource =
-//          new ProgressiveMediaSource.Factory(dataSourceFactory)
-//              .setDrmSessionManagerProvider(unusedMediaItem -> drmSessionManager)
-//              .createMediaSource(MediaItem.fromUri(uri));
-//    } else {
-//      IllegalStateException illegalStateException=new IllegalStateException();
-//      Log.i("--=","Build.VERSION.SDK_INT="+Build.VERSION.SDK_INT+";异常="+Log.getStackTraceString(illegalStateException));
-//
-//      throw illegalStateException;
-//    }
-//    Log.i("--=","Build.VERSION.SDK_INT="+Build.VERSION.SDK_INT+";1");
-//
-//    ExoPlayer player = new ExoPlayer.Builder(getApplicationContext()).build();
-//    player.setMediaSource(mediaSource);
-//    player.prepare();
-//    player.play();
-//    player.setRepeatMode(Player.REPEAT_MODE_OFF);//Player.REPEAT_MODE_ALL循环播放,Player.REPEAT_MODE_OFF不循环播放
-//    // 添加播放状态监听
-//    player.addListener(new Player.Listener() {
-//      @Override
-//      public void onPlaybackStateChanged(@Player.State int playbackState) {
-//        if (playbackState == Player.STATE_ENDED) {
-//          Log.d("PlayerListener", "播放结束");
-//          // 这里处理播放完成逻辑
-//        }
-//      }
-//    });
-//
-//    Surface surface = nonFullScreenView.getHolder().getSurface();
-//    player.setVideoSurface(surface);
-//
-//    MainActivity.player = player;
-//  }
+
+  private List<String> getAllMp4FilesInDownloads() {
+    if (mp4Files == null) {
+      mp4Files = new ArrayList<>();
+    } else {
+      mp4Files.clear();
+    }
+    // 获取公共下载目录路径
+    File downloadDir = Environment.getExternalStoragePublicDirectory(
+        Environment.DIRECTORY_DOWNLOADS);
+
+    if (downloadDir != null && downloadDir.exists()) {
+      File[] files = downloadDir.listFiles();
+      if (files != null) {
+        for (File file : files) {
+          if (file.isFile() && file.getName().toLowerCase().endsWith(".mp4")) {
+            mp4Files.add(file.getAbsolutePath());
+          }
+        }
+      }
+    }
+
+    return mp4Files;
+  }
+
 
   private void initializePlayer() {
 
@@ -230,17 +185,24 @@ public final class MainActivity extends Activity {
 
 //    String path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
 //        .getAbsolutePath() + "/92647-720p.mp4";
-    String path = "/storage/sdcard0/Download/92647-720p.mp4";
+//    String path = "/storage/sdcard0/Download/92647-720p.mp4";
 //    String path = "https://storage.googleapis.com/exoplayer-test-media-1/mkv/android-screens-lavf-56.36.100-aac-avc-main-1280x720.mkv";
 
 //    uri = Uri.fromFile(new File(path));
+
+    int g = currPotion++;
+    if (g >= mp4Files.size()) {
+      g = 0;
+      currPotion = 0;
+    }
+    String path = mp4Files.get(g);
 
     if (path.startsWith("http") || path.startsWith("https")) {
       // 网络地址
       uri = Uri.parse(path);
     } else {
       // 本地路径（可以是 /storage/emulated/0/xxx.mp4）
-      File file=new File(path);
+      File file = new File(path);
       Log.d("FileCheck", "exists=" + file.exists() + ", canRead=" + file.canRead());
 
       uri = Uri.fromFile(file);
@@ -248,7 +210,8 @@ public final class MainActivity extends Activity {
 
     Context context = getApplicationContext();
     Log.i("--=",
-        "Build.VERSION.SDK_INT=" + Build.VERSION.SDK_INT + ";1,path=" + uri.getPath());
+        "Build.VERSION.SDK_INT=" + Build.VERSION.SDK_INT + ";1,path=" + uri.getPath()
+            + ";g=" + g);
 //    MediaItem mediaItem = MediaItem.fromUri(uri);
 
     // 统一使用 DefaultDataSource.Factory（会自动判断是本地 or 网络）

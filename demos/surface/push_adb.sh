@@ -27,7 +27,8 @@ adb remount
 #adb push /Users/aaronzfy/do-video/has-question/origin-videos/720p/92647-720p.mp4 /storage/emulated/0/Download
 #铁盒
 #adb push /Users/aaronzfy/do-video/has-question/origin-videos/720p/92647-720p.mp4 /storage/emulated/legacy/Download
-adb push /Users/aaronzfy/do-video/has-question/origin-videos/720p/92647-720p.mp4 /storage/emulated/legacy
+#adb push /Users/aaronzfy/do-video/has-question/origin-videos/720p/92647-720p.mp4 /storage/emulated/legacy
+adb push /Users/aaronzfy/do-video/has-question/origin-videos/173891338651752yj_ad_resource-repository.mp4 /storage/emulated/legacy
 
 
 
